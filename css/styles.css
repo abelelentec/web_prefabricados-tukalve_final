@@ -869,6 +869,20 @@ nav a {
     transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s ease;
 }
 
+/* Estados explícitos para mostrar/ocultar el card del hero */
+.hero-content.is-hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translateY(28px);
+}
+.hero-content.is-visible {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translateY(0);
+}
+
 .hero-eyebrow {
     margin: 0 0 12px;
     font-size: 0.8rem;
@@ -1437,6 +1451,8 @@ img {
         text-align: left;
         width: auto;
         max-width: min(100%, 560px);
+        /* mover el card más abajo en móvil para evitar que aparezca al entrar */
+        margin-top: 36px;
     }
 }
 

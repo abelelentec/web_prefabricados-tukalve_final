@@ -6,17 +6,61 @@ const lightbox = document.getElementById('imageLightbox');
 const lightboxImage = lightbox ? lightbox.querySelector('img') : null;
 const closeButton = lightbox ? lightbox.querySelector('.lightbox-close') : null;
 const mobileQuery = window.matchMedia('(max-width: 900px)');
+let heroWasVisible = null;
 
 function updateHeroVisibility() {
     if (!heroContent) return;
 
-    if (mobileQuery.matches && window.scrollY < 60) {
-        heroContent.classList.add('is-hidden');
-        heroContent.classList.remove('is-visible');
-    } else {
-        heroContent.classList.remove('is-hidden');
-        heroContent.classList.add('is-visible');
+    // En móvil: ocultar el card al entrar (scrollY ~= 0). Mostrar sólo
+    // cuando el usuario desplaza ligeramente hacia abajo (umbral pequeño).
+    if (mobileQuery.matches) {
+        const wasVisible = heroWasVisible;
+        let shouldBeVisible = true;
+        if (window.scrollY <= 2) {
+            shouldBeVisible = false;
+            heroContent.classList.add('is-hidden');
+            heroContent.classList.remove('is-visible');
+        } else {
+            shouldBeVisible = true;
+            heroContent.classList.remove('is-hidden');
+            heroContent.classList.add('is-visible');
+        }
+
+        // Si hemos pasado de oculto -> visible, nos aseguramos que el card
+        // quede completamente visible dentro del viewport (evita recorte).
+        if (!wasVisible && shouldBeVisible) {
+            ensureHeroFullyVisible();
+        }
+        heroWasVisible = shouldBeVisible;
+        return;
     }
+
+    // En escritorio siempre visible
+    heroContent.classList.remove('is-hidden');
+    heroContent.classList.add('is-visible');
+}
+
+function ensureHeroFullyVisible() {
+    if (!heroContent) return;
+    // pequeño delay para dejar que la clase y layout se apliquen
+    requestAnimationFrame(() => {
+        const rect = heroContent.getBoundingClientRect();
+        const headerHeight = header ? header.offsetHeight : 0;
+        const padding = 8; // margen extra
+
+        // Si la parte superior del card queda detrás del header, desplazamos hacia arriba
+        if (rect.top < headerHeight + padding) {
+            const delta = rect.top - (headerHeight + padding);
+            window.scrollBy({ top: delta, behavior: 'smooth' });
+            return;
+        }
+
+        // Si la parte inferior del card queda fuera del viewport, desplazamos hacia abajo
+        if (rect.bottom > window.innerHeight - padding) {
+            const delta = rect.bottom - (window.innerHeight - padding);
+            window.scrollBy({ top: delta, behavior: 'smooth' });
+        }
+    });
 }
 
 // Reducir header al hacer scroll
@@ -35,15 +79,17 @@ window.addEventListener('resize', updateHeroVisibility);
 window.addEventListener('load', updateHeroVisibility);
 updateHeroVisibility();
 
-// Abrir/cerrar menú hamburguesa
-toggle.addEventListener('click', () => {
-    nav.classList.toggle('open');
-});
+// Abrir/cerrar menú hamburguesa (solo si existe el toggle)
+if (toggle) {
+    toggle.addEventListener('click', () => {
+        if (nav) nav.classList.toggle('open');
+    });
+}
 
 // Cerrar menú al hacer clic en un enlace
 document.querySelectorAll('nav a').forEach(link => {
     link.addEventListener('click', () => {
-        nav.classList.remove('open');
+        if (nav) nav.classList.remove('open');
     });
 });
 
